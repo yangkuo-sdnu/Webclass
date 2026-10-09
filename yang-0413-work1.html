@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>B站搜索页面 - 计算机组成原理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background-color: #ffffff;
+            color: #222;
+        }
+        /* 浏览器顶部栏 flex */
+        .browser-top {
+            background: #202124;
+            color: #fff;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            gap:8px;
+            font-size:13px;
+        }
+        .browser-url {
+            flex:1;
+            background:#303134;
+            border-radius:4px;
+            padding:4px 8px;
+        }
+        /* B站头部 flex */
+        .bili-header {
+            display:flex;
+            align-items:center;
+            padding:12px 20px;
+            gap:16px;
+        }
+        .search-wrap {
+            flex:1;
+            position:relative;
+        }
+        .search-input {
+            width:100%;
+            padding:10px 14px;
+            border:1px solid #ccd0d5;
+            border-radius:6px 0 0 6px;
+            font-size:14px;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #00a1d6;
+        }
+        .search-btn {
+            position:absolute;
+            right:0;
+            top:0;
+            height:100%;
+            width:80px;
+            background:#00a1d6;
+            color:white;
+            border:none;
+            border-radius:0 6px 6px 0;
+            cursor:pointer;
+            font-size:14px;
+        }
+        /* 搜索下拉面板 默认隐藏 */
+        .search-history-card {
+            position:absolute;
+            top:48px;
+            left:0;
+            width:calc(100% - 80px);
+            background:#fff;
+            border:1px solid #e5e9ef;
+            box-shadow:0 4px 12px rgba(0,0,0,0.08);
+            border-radius:0 0 6px 6px;
+            padding:12px;
+            z-index:20;
+            display:none;
+        }
+        .search-history-card.show {
+            display:block;
+        }
+        .history-title {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            font-size:13px;
+            color:#666;
+            margin-bottom:10px;
+        }
+        .clear-btn {
+            color:#999;
+            cursor:pointer;
+        }
+        .clear-btn:hover {
+            color:#00a1d6;
+        }
+        .history-items {
+            display:flex;
+            flex-wrap: wrap;
+            gap:8px;
+        }
+        .history-item {
+            font-size:13px;
+            color:#444;
+            background:#f5f6f7;
+            border-radius:4px;
+            padding:6px 10px;
+            cursor:pointer;
+            transition: all 0.2s;
+        }
+        .history-item:hover {
+            background:#00a1d6;
+            color:#fff;
+        }
+        .suggest-items {
+            margin-top:10px;
+            border-top:1px dashed #e5e9ef;
+            padding-top:10px;
+            display:none;
+        }
+        .suggest-items.show {
+            display:block;
+        }
+        .suggest-item {
+            font-size:13px;
+            color:#444;
+            padding:6px 4px;
+            cursor:pointer;
+            border-radius:4px;
+        }
+        .suggest-item:hover {
+            background:#f0f7ff;
+            color:#00a1d6;
+        }
+        .panel-footer {
+            margin-top:10px;
+            text-align:center;
+        }
+        .more-btn {
+            font-size:12px;
+            color:#999;
+            cursor:pointer;
+        }
+        .more-btn:hover {
+            color:#00a1d6;
+        }
+        /* 标签栏 flex */
+        .tab-bar {
+            padding:0 20px 12px;
+            display:flex;
+            gap:24px;
+            font-size:14px;
+            color:#666;
+        }
+        .tab-bar span.active {
+            color:#00a1d6;
+        }
+        .sort-line {
+            padding:0 20px 16px;
+            display:flex;
+            gap:20px;
+            font-size:13px;
+            color:#777;
+        }
+        /* ========== flex 视频卡片列表 ========== */
+        .video-container {
+            padding:0 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap:18px;
+        }
+        .video-card {
+            width: calc( (100% - 18px * 4) / 5 );
+        }
+        .video-thumb {
+            width:100%;
+            height:140px;
+            background:#ccc;
+            border-radius:6px;
+            margin-bottom:8px;
+            position:relative;
+            overflow:hidden;
+        }
+        .video-time {
+            position:absolute;
+            bottom:4px;
+            right:4px;
+            background:#00000088;
+            color:#fff;
+            font-size:12px;
+            padding:2px 4px;
+            border-radius:2px;
+        }
+        .video-title {
+            font-size:14px;
+            line-height:1.4;
+            margin-bottom:4px;
+        }
+        .video-meta {
+            font-size:12px;
+            color:#888;
+        }
+        /* 任务栏 flex */
+        .taskbar {
+            position:fixed;
+            bottom:0;
+            left:0;
+            width:100%;
+            height:40px;
+            display:flex;
+            align-items:center;
+            padding:0 10px;
+            gap:10px;
+            background:#202124;
+            color:#fff;
+            font-size:13px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 浏览器窗口 -->
+    <div class="browser-top">
+        <span>← → ⟳ ⭐</span>
+        <div class="browser-url">https://search.bilibili.com/all?keyword=计算机组成原理&from_source=websuggest_search&spm_id_from=333.1007.8&search_source=2</div>
+        <span>📋 聊天</span>
+    </div>
+
+    <!-- B站页面主体 -->
+    <div class="bili-header">
+        <div class="search-wrap">
+            <input
+                id="searchInput"
+                class="search-input"
+                type="text"
+                placeholder="输入关键字搜索"
+                value=""
+                autocomplete="off"
+            />
+            <button id="searchBtn" class="search-btn">搜索</button>
+
+            <!-- 搜索下拉面板 -->
+            <div id="searchPanel" class="search-history-card">
+                <div class="history-title">
+                    <span>搜索历史</span>
+                    <span id="clearHistory" class="clear-btn">清空</span>
+                </div>
+                <div id="historyList" class="history-items"></div>
+                <div id="suggestList" class="suggest-items"></div>
+                <div class="panel-footer">
+                    <span id="toggleMore" class="more-btn">展开更多↓</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <span class="active">综合</span>
+        <span>视频 99+</span>
+        <span>番剧 0</span>
+        <span>影视 0</span>
+        <span>直播 0</span>
+    </div>
+    <div class="sort-line">
+        <span class="active">综合排序</span>
+        <span>最多播放</span>
+        <span>最新发布</span>
+        <span>最多弹幕</span>
+        <span style="margin-left:auto;">更多筛选 ∨</span>
+    </div>
+
+    <!-- 视频卡片区域 flex版本 -->
+    <div class="video-container">
+        <!-- 第1行 -->
+        <div class="video-card">
+            <div class="video-thumb" style="background:#ffd100;">
+                <div class="video-time"></div>
+            </div>
+            <div class="video-title">零基础速通 C++/AI/嵌入式开发</div>
+            <div class="video-meta">计算机组成原理/C语言/C++ 入门到精通</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#000;">
+                <div class="video-time">05:40:10</div>
+            </div>
+            <div class="video-title">【计组】计组6小时期末速成计算机组成原理期末复习</div>
+            <div class="video-meta">160.2万 66 | 绩满满 · 2025-06-19</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#3355dd;">
+                <div class="video-time">06:35:24</div>
+            </div>
+            <div class="video-title">【期末冲刺上大分】《计算机组成原理》6.5小时速成</div>
+            <div class="video-meta">115.7万 3570 | 蜂考 · 2025-02-08</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#f0eade;">
+                <div class="video-time"></div>
+            </div>
+            <div class="video-title">给在校大三生普及一下不同院校的考研难度</div>
+            <div class="video-meta">185.3万 90 | 进击的考研菌 · 2025-12-18</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#4477ff;">
+                <div class="video-time"></div>
+            </div>
+            <div class="video-title">王道计算机考研 计算机组成原理</div>
+            <div class="video-meta">王道计算机教育 · 2023-04-18</div>
+        </div>
+
+        <!-- 第2行 -->
+        <div class="video-card">
+            <div class="video-thumb" style="background:#0088dd;">
+                <div class="video-time">34:52:56</div>
+            </div>
+            <div class="video-title">计算机组成原理微课堂</div>
+            <div class="video-meta">319万 6.1万 | 湖科大教书匠 · 2023-11-09</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#222;">
+                <div class="video-time">01:02:12</div>
+            </div>
+            <div class="video-title">一小时速通《计算机组成原理》</div>
+            <div class="video-meta">166 0</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#f5d8e9;">
+                <div class="video-time">03:47</div>
+            </div>
+            <div class="video-title">这都啥事儿啊！！误食*药 成绩不保？！</div>
+            <div class="video-meta">52.9万 | 天上掉下个查妹辣 · 8月12日</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#ffcc00;">
+                <div class="video-time">32:04:32</div>
+            </div>
+            <div class="video-title">计算机组成原理【27考研408高分必看】</div>
+            <div class="video-meta">134.2万 5135 | 老汤讲408 · 2025-03-05</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#2244aa;">
+                <div class="video-time">03:23:16</div>
+            </div>
+            <div class="video-title">《计算机组成原理》挑战零基础冲刺90+!</div>
+            <div class="video-meta">292 3 | 做科研的王师兄 · 16小时前</div>
+        </div>
+        <div class="video-card">
+            <div class="video-thumb" style="background:#770000;">
+                <div class="video-time">32:15:09</div>
+            </div>
+            <div class="video-title">计算机组成原理唐朔飞【带目录带课件】</div>
+            <div class="video-meta">刘科学长 · 2023年5月14日</div>
+        </div>
+    </div>
+
+    <!-- Windows任务栏 -->
+    <div class="taskbar">
+        <span>🔍 搜索</span>
+        <span>🪟</span>
+        <span>💬</span>
+        <span>📂</span>
+        <span>🌐</span>
+        <span>📄</span>
+        <span>💻</span>
+        <span>🐧</span>
+        <span style="margin-left:auto;">25℃ 🔊 🔋 72% 13:13</span>
+    </div>
+
+<script>
+  const searchInput = document.getElementById('searchInput');
+  const searchBtn = document.getElementById('searchBtn');
+  const searchPanel = document.getElementById('searchPanel');
+  const historyList = document.getElementById('historyList');
+  const suggestList = document.getElementById('suggestList');
+  const clearHistory = document.getElementById('clearHistory');
+  const toggleMore = document.getElementById('toggleMore');
+
+  // 模拟搜索历史
+  let searchHistory = [
+    '计算机组成原理',
+    '操作系统',
+    'JavaSE',
+    '狼与辛香料',
+    '狼与辛香料华盟',
+    'ai大模型应用开发',
+    'python',
+    '781551374',
+    '红黑树',
+    '计算机组成原理...',
+    '面向对象程序设计',
+    '蜂考面向对象'
+  ];
+
+  // 模拟搜索建议
+  const suggestMap = {
+    '计算机': ['计算机组成原理', '计算机网络', '计算机基础', '计算机考研'],
+    '组成': ['组成原理', '组成原理期末', '组成原理唐朔飞'],
+    '原理': ['原理是什么', '原理考试重点', '原理思维导图'],
+    '计算机组成原理': [
+      '计算机组成原理网课',
+      '计算机组成原理期末',
+      '计算机组成原理考研',
+      '计算机组成原理唐朔飞'
+    ]
+  };
+
+  let showAll = false;
+
+  // 渲染历史记录
+  function renderHistory() {
+    historyList.innerHTML = '';
+    const list = showAll ? searchHistory : searchHistory.slice(0, 10);
+    list.forEach(keyword => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.textContent = keyword;
+      item.onclick = () => {
+        searchInput.value = keyword;
+        searchPanel.classList.remove('show');
+      };
+      historyList.appendChild(item);
+    });
+    toggleMore.textContent = showAll ? '收起↑' : '展开更多↓';
+  }
+
+  // 渲染搜索建议
+  function renderSuggest(value) {
+    suggestList.innerHTML = '';
+    const key = value.trim();
+    if (!key) {
+      suggestList.classList.remove('show');
+      return;
+    }
+    const suggests = suggestMap[key] || [`${key} 视频`,`${key} 教程`,`${key} 期末复习`,`${key} 考研`];
+    suggests.forEach(text => {
+      const item = document.createElement('div');
+      item.className = 'suggest-item';
+      item.textContent = text;
+      item.onclick = () => {
+        searchInput.value = text;
+        searchPanel.classList.remove('show');
+      };
+      suggestList.appendChild(item);
+    });
+    suggestList.classList.add('show');
+  }
+
+  // 输入框聚焦
+  searchInput.addEventListener('focus', () => {
+    searchPanel.classList.add('show');
+    renderHistory();
+  });
+
+  // 输入监听
+  searchInput.addEventListener('input', () => {
+    renderSuggest(searchInput.value);
+  });
+
+  // 点击搜索按钮
+  searchBtn.addEventListener('click', () => {
+    const value = searchInput.value.trim();
+    if (!value) return;
+    if (!searchHistory.includes(value)) {
+      searchHistory.unshift(value);
+      if (searchHistory.length > 20) searchHistory.pop();
+    }
+    alert('模拟搜索：' + value);
+    searchPanel.classList.remove('show');
+  });
+
+  // 回车搜索
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      searchBtn.click();
+    }
+  });
+
+  // 清空历史
+  clearHistory.addEventListener('click', () => {
+    searchHistory = [];
+    renderHistory();
+  });
+
+  // 展开收起
+  toggleMore.addEventListener('click', () => {
+    showAll = !showAll;
+    renderHistory();
+  });
+
+  // 点击页面空白关闭下拉
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap')) {
+      searchPanel.classList.remove('show');
+    }
+  });
+</script>
+</body>
+</html>
